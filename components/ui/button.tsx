@@ -1,7 +1,4 @@
-// packages/cli/src/utils/templates.ts
-export function getTemplate(name: string) {
-  const templates: Record<string, string> = {
-    button: `
+
 import * as React from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
@@ -22,9 +19,4 @@ export function Button({ children, ...props }: ButtonProps) {
       {children}
     </button>
   );
-}
-`,
-  };
-
-  return templates[name];
 }
