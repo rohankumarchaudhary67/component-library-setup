@@ -14,32 +14,46 @@ export const add = new Command()
   .action(async (componentName) => {
     const spinner = ora(`Adding ${componentName}...`).start();
 
-    const template = await getTemplate(componentName);
-    if (!template) {
-      spinner.fail(chalk.red(`No template found for component: ${componentName}`));
+    try {
+      const template = await getTemplate(componentName);
+      if (!template) {
+        spinner.fail(chalk.red(`No template found for component: ${componentName}`));
+        process.exit(1);
+      }
+
+      // Detect whether 'src' folder exists
+      const cwd = process.cwd();
+      const srcPath = path.join(cwd, "src");
+      const hasSrc = await fs.pathExists(srcPath);
+
+      // Set output directory based on project structure
+      const outDir = hasSrc
+        ? path.join(srcPath, "components/ui")
+        : path.join(cwd, "components/ui");
+
+      await fs.ensureDir(outDir);
+      const outFile = path.join(outDir, `${componentName}.tsx`);
+      await fs.writeFile(outFile, template);
+
+      // Define dependencies for each component
+      const deps: Record<string, string[]> = {
+        button: [
+          "@radix-ui/react-slot",
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge",
+        ],
+      };
+
+      // Install dependencies if defined
+      if (deps[componentName]) {
+        spinner.text = "Installing dependencies...";
+        await execa("npm", ["install", ...deps[componentName]], { stdio: "inherit" });
+      }
+
+      spinner.succeed(chalk.green(`✅ ${componentName} component added successfully!`));
+    } catch (error: any) {
+      spinner.fail(chalk.red(`Failed to add ${componentName}: ${error.message}`));
       process.exit(1);
     }
-
-    // Write to the project's components/ui folder
-    const outDir = path.resolve(process.cwd(), "components/ui");
-    await fs.ensureDir(outDir);
-    const outFile = path.join(outDir, `${componentName}.tsx`);
-    await fs.writeFile(outFile, template);
-
-    // Define dependencies for each component
-    const deps: Record<string, string[]> = {
-      button: [
-        "@radix-ui/react-slot",
-        "class-variance-authority",
-        "clsx",
-        "tailwind-merge",
-      ],
-    };
-
-    if (deps[componentName]) {
-      spinner.text = "Installing dependencies...";
-      await execa("npm", ["install", ...deps[componentName]]);
-    }
-
-    spinner.succeed(chalk.green(`✅ ${componentName} component added successfully!`));
   });

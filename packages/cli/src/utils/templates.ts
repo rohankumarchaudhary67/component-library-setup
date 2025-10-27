@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 
 // URL of your public GitHub repo that stores component templates
 const REMOTE_BASE_URL =
-  "https://raw.githubusercontent.com/rohanchaudhary/component-library-setup/main/packages/cli/src/templates";
+  "https://raw.githubusercontent.com/rohankumarchaudhary67/component-library-setup/main/packages/templates";
 
 export async function getTemplate(name: string) {
   try {
