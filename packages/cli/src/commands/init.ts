@@ -31,7 +31,6 @@ export const init = new Command()
 
       const themeContent = `
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
