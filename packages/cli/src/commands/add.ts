@@ -1,39 +1,45 @@
 // packages/cli/src/commands/add.ts
 import fs from "fs-extra";
 import path from "path";
-import { Command } from "commander";
 import chalk from "chalk";
-import { getConfig } from "../utils/get-config.js";
+import { Command } from "commander";
+import { execa } from "execa";
+import ora from "ora";
 import { getTemplate } from "../utils/templates.js";
 
 export const add = new Command()
   .name("add")
   .argument("<component>", "component name to add")
-  .description("Add a UI component")
-  .action(async (component) => {
-    const config = await getConfig();
-    if (!config) {
-      console.log(chalk.red("❌ Run `mycli init` first."));
-      return;
+  .description("Add a UI component to your project")
+  .action(async (componentName) => {
+    const spinner = ora(`Adding ${componentName}...`).start();
+
+    const template = getTemplate(componentName);
+    if (!template) {
+      spinner.fail(chalk.red(`No template found for component: ${componentName}`));
+      process.exit(1);
     }
 
-    const componentCode = getTemplate(component);
-    if (!componentCode) {
-      console.log(chalk.red(`❌ No template found for component: ${component}`));
-      return;
-    }
-
-    const outDir = path.resolve(process.cwd(), config.componentsDir);
+    // Write to the project's components/ui folder
+    const outDir = path.resolve(process.cwd(), "components/ui");
     await fs.ensureDir(outDir);
+    const outFile = path.join(outDir, `${componentName}.tsx`);
+    await fs.writeFile(outFile, template);
 
-    const filePath = path.join(outDir, `${component}.tsx`);
-    if (fs.existsSync(filePath)) {
-      console.log(chalk.yellow(`⚠️ ${component}.tsx already exists.`));
-      return;
+    // Define dependencies for each component
+    const deps: Record<string, string[]> = {
+      button: [
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge",
+      ],
+    };
+
+    if (deps[componentName]) {
+      spinner.text = "Installing dependencies...";
+      await execa("npm", ["install", ...deps[componentName]]);
     }
 
-    await fs.writeFile(filePath, componentCode);
-    console.log(chalk.green(`✅ Added ${component} component to ${config.componentsDir}`));
+    spinner.succeed(chalk.green(`✅ ${componentName} component added successfully!`));
   });
-
-  
