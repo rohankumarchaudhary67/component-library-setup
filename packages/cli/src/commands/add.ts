@@ -14,7 +14,7 @@ export const add = new Command()
   .action(async (componentName) => {
     const spinner = ora(`Adding ${componentName}...`).start();
 
-    const template = getTemplate(componentName);
+    const template = await getTemplate(componentName);
     if (!template) {
       spinner.fail(chalk.red(`No template found for component: ${componentName}`));
       process.exit(1);
